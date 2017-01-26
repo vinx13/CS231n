@@ -29,7 +29,26 @@ def softmax_loss_naive(W, X, y, reg):
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+
+  num_train, dim = X.shape
+  num_classes = W.shape[1]
+
+  for i in xrange(num_train):
+      score = X[i].dot(W)
+      score -= -np.amax(score)
+      total = np.sum(np.exp(score))
+      prob = np.exp(score[y[i]])/total
+      loss += -np.log(prob)
+      for j in xrange(num_classes):
+          for k in xrange(dim):
+              dW[k][j] += X[i][k] * np.exp(score[j]) / total
+      for k in xrange(dim):
+          dW[k][y[i]] -= X[i][k]
+
+  loss /= num_train
+  loss += 0.5 * reg * np.sum(W * W)
+  dW /= num_train
+  dW += reg * W # regularization
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
@@ -48,15 +67,30 @@ def softmax_loss_vectorized(W, X, y, reg):
   dW = np.zeros_like(W)
 
   #############################################################################
-  # TODO: Compute the softmax loss and its gradient using no explicit loops.  #
+  # Compute the softmax loss and its gradient using no explicit loops.  #
   # Store the loss in loss and the gradient in dW. If you are not careful     #
   # here, it is easy to run into numeric instability. Don't forget the        #
   # regularization!                                                           #
   #############################################################################
-  pass
+  num_train, dim = X.shape
+  num_classes = W.shape[1]
+
+  scores = X.dot(W)
+  scores -= np.amax(scores, axis=1, keepdims=True)
+  total = np.sum(np.exp(scores), axis=1, keepdims=True)
+  p = np.exp(scores) / total
+  loss = np.sum(np.log(p[np.arange(num_train), y]))
+  loss /= -num_train
+  loss += 0.5 * reg * (np.sum(W * W))
+
+  mask = p
+  mask[np.arange(num_train), y] -= 1
+
+  dW = X.T.dot(mask)
+  dW /= num_train
+  dW += reg * W
   #############################################################################
   #                          END OF YOUR CODE                                 #
   #############################################################################
 
   return loss, dW
-
